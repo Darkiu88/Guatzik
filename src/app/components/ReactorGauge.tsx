@@ -2,151 +2,151 @@ import { motion } from 'motion/react';
 import { useEffect, useState } from 'react';
 
 interface ReactorGaugeProps {
-  percentage: number;
-  voltage: string;
-  threads: number;
-  governor: string;
+  value: number; // Usamos 'value' para que sea compatible con tu Dashboard actual
+  label?: string;
 }
 
-export function ReactorGauge({ percentage, voltage, threads, governor }: ReactorGaugeProps) {
-  // Generate historical CPU data (mountain chart)
+export function ReactorGauge({ value, label = "CPU UTILIZATION" }: ReactorGaugeProps) {
+  // 1. BLINDAJE: Aseguramos que el valor sea un número válido
+  const safeValue = (typeof value === 'number' && !isNaN(value)) ? value : 0;
+
+  // 2. SIMULACIÓN DE HISTORIAL (Para la gráfica de fondo)
+  // Como el backend aun no manda historial, lo simulamos visualmente
   const [historyData, setHistoryData] = useState<number[]>([]);
 
   useEffect(() => {
-    // Initialize with random data simulating CPU history
-    const data = Array.from({ length: 60 }, () => Math.random() * 60 + 20);
-    setHistoryData(data);
+    // Llenamos el array inicial
+    const initialData = Array.from({ length: 40 }, () => Math.random() * 40 + 10);
+    setHistoryData(initialData);
 
     const interval = setInterval(() => {
-      setHistoryData((prev) => [...prev.slice(1), Math.random() * 60 + 20]);
+      setHistoryData((prev) => {
+        // Agregamos un punto nuevo basado en el valor actual del CPU (con variación)
+        const variance = Math.random() * 10 - 5;
+        const newPoint = Math.max(5, Math.min(90, safeValue + variance)); 
+        return [...prev.slice(1), newPoint];
+      });
     }, 1000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [safeValue]);
 
-  const topProcesses = [
-    { name: 'DOCKER_CONTAINER', usage: 12 },
-    { name: 'PYTHON_SCRIPT_V2', usage: 8 },
-    { name: 'SYSTEM_KERNEL', usage: 4 },
-    { name: 'NODE_SERVER', usage: 3 },
-  ];
+  // 3. GENERADOR DE RUTA SVG (La montaña)
+  const generatePath = () => {
+    if (historyData.length === 0) return "";
+    const width = 100; 
+    const height = 100;
+    const stepX = width / (historyData.length - 1);
+
+    let pathD = `M 0 ${height} `; // Inicio abajo-izquierda
+
+    historyData.forEach((val, i) => {
+      const x = i * stepX;
+      const y = height - val; // Invertir Y
+      pathD += `L ${x} ${y} `;
+    });
+
+    pathD += `L ${width} ${height} Z`; // Cerrar ruta
+    return pathD;
+  };
 
   return (
-    <div className="relative flex items-center justify-center w-full h-full">
-      {/* Historical Area Chart (Mountain) */}
-      <svg
-        className="absolute inset-0 w-full h-full opacity-30"
-        viewBox="0 0 100 100"
-        preserveAspectRatio="none"
-      >
-        <defs>
-          <linearGradient id="cpuGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#00F3FF" stopOpacity="0.15" />
-            <stop offset="100%" stopColor="#00F3FF" stopOpacity="0" />
-          </linearGradient>
-        </defs>
-        {historyData.length > 0 && (
+    <div className="relative w-full h-full flex items-center justify-center min-h-[350px] overflow-hidden rounded-3xl">
+      
+      {/* --- FONDO: GRÁFICA DE MONTAÑA --- */}
+      <div className="absolute inset-0 z-0 opacity-40 mix-blend-screen">
+        <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="cpuGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#00F3FF" stopOpacity="0.4" />
+              <stop offset="100%" stopColor="#00F3FF" stopOpacity="0" />
+            </linearGradient>
+          </defs>
           <path
-            d={`M 0 100 ${historyData
-              .map((value, i) => `L ${(i / historyData.length) * 100} ${100 - value}`)
-              .join(' ')} L 100 100 Z`}
+            d={generatePath()}
             fill="url(#cpuGradient)"
             stroke="#00F3FF"
             strokeWidth="0.5"
-            opacity="0.6"
+            vectorEffect="non-scaling-stroke"
           />
-        )}
-      </svg>
-
-      {/* Outer rotating ring */}
-      <motion.div
-        className="absolute w-64 h-64 rounded-full border-2 border-[#00F3FF]"
-        style={{
-          boxShadow: '0 0 20px #00F3FF, inset 0 0 20px rgba(0, 243, 255, 0.3)',
-        }}
-        animate={{ rotate: 360 }}
-        transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
-      />
-
-      {/* Middle glass ring */}
-      <div
-        className="absolute w-56 h-56 rounded-full border border-[#00F3FF]/30 backdrop-blur-sm"
-        style={{
-          background: 'radial-gradient(circle, rgba(0, 243, 255, 0.1) 0%, transparent 70%)',
-        }}
-      />
-
-      {/* Inner glow */}
-      <div
-        className="absolute w-48 h-48 rounded-full"
-        style={{
-          background: 'radial-gradient(circle, rgba(0, 243, 255, 0.3) 0%, transparent 70%)',
-          filter: 'blur(20px)',
-        }}
-      />
-
-      {/* Center percentage */}
-      <div className="relative z-10 text-center">
-        <div
-          className="text-6xl font-bold text-white"
-          style={{
-            textShadow: '0 0 20px rgba(255, 255, 255, 0.8), 0 0 40px rgba(0, 243, 255, 0.6)',
-          }}
-        >
-          {percentage}%
-        </div>
-        <div className="text-xs text-[#00F3FF] mt-2 font-mono tracking-wider">
-          CPU UTILIZATION
-        </div>
+        </svg>
       </div>
 
-      {/* Top Processes List (Right Side) */}
-      <div className="absolute right-4 top-1/4 space-y-1">
-        <div className="text-[8px] text-[#00F3FF] font-mono tracking-wider mb-2 opacity-60">
-          TOP PROCESSES
-        </div>
-        {topProcesses.map((process, index) => (
-          <div
-            key={index}
-            className="text-[9px] font-mono text-gray-400 flex items-center justify-between space-x-2"
-          >
-            <span className="text-gray-500">{process.name}</span>
-            <span className="text-[#00FF41]">{process.usage}%</span>
-          </div>
-        ))}
-      </div>
+      {/* --- CENTRO: EL REACTOR --- */}
+      <div className="relative z-10 w-72 h-72 flex items-center justify-center">
+        {/* Anillo Exterior Estático */}
+        <div className="absolute inset-0 rounded-full border border-[#00F3FF]/10 shadow-[0_0_50px_rgba(0,243,255,0.1)]" />
 
-      {/* Technical micro-typography */}
-      <div className="absolute bottom-0 left-0 right-0 text-center text-[8px] font-mono text-gray-400 pb-4 space-y-1">
-        <div className="tracking-wide">VOLTAJE: {voltage} | HILOS: {threads} Activos</div>
-        <div className="tracking-wide">GOBERNADOR: {governor}</div>
-      </div>
-
-      {/* Pulsing particles */}
-      {[...Array(8)].map((_, i) => (
+        {/* Anillo Principal Giratorio */}
         <motion.div
-          key={i}
-          className="absolute w-1 h-1 bg-[#00F3FF] rounded-full"
-          style={{
-            left: '50%',
-            top: '50%',
-            marginLeft: -2,
-            marginTop: -2,
-          }}
-          animate={{
-            x: [0, Math.cos((i * Math.PI) / 4) * 140],
-            y: [0, Math.sin((i * Math.PI) / 4) * 140],
-            opacity: [1, 0],
-            scale: [1, 0.5],
-          }}
-          transition={{
-            duration: 2,
-            repeat: Infinity,
-            delay: i * 0.25,
-            ease: 'easeOut',
-          }}
+          className="absolute inset-0 rounded-full border-2 border-t-[#00F3FF] border-r-transparent border-b-[#00F3FF]/20 border-l-transparent"
+          animate={{ rotate: 360 }}
+          transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
         />
-      ))}
+
+        {/* Anillo Secundario (Contra-rotación) */}
+        <motion.div
+          className="absolute inset-4 rounded-full border border-t-transparent border-r-[#00FF41]/50 border-b-transparent border-l-[#00FF41]/50"
+          animate={{ rotate: -360 }}
+          transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+        />
+
+        {/* Círculo de Cristal Central */}
+        <div className="absolute inset-8 rounded-full bg-gradient-to-b from-[#00F3FF]/10 to-transparent backdrop-blur-[2px] border border-[#00F3FF]/20" />
+
+        {/* TEXTO CENTRAL */}
+        <div className="relative z-20 text-center flex flex-col items-center">
+          <div className="flex items-baseline">
+            <span className="text-6xl font-bold font-mono text-white text-glow-white tracking-tighter">
+              {safeValue.toFixed(1)}
+            </span>
+            <span className="text-2xl text-[#00F3FF] font-bold ml-1">%</span>
+          </div>
+          <div className="h-px w-16 bg-gradient-to-r from-transparent via-[#00F3FF] to-transparent my-2" />
+          <span className="text-[10px] text-[#00F3FF] tracking-[0.3em] font-bold uppercase">
+            {label}
+          </span>
+          
+          {/* Puntos decorativos bajo el texto */}
+          <div className="flex gap-1 mt-2">
+            <div className="w-1 h-1 rounded-full bg-[#00F3FF] animate-pulse" />
+            <div className="w-1 h-1 rounded-full bg-[#00F3FF] animate-pulse delay-75" />
+            <div className="w-1 h-1 rounded-full bg-[#00F3FF] animate-pulse delay-150" />
+          </div>
+        </div>
+      </div>
+
+      {/* --- DERECHA: LISTA DE PROCESOS (Estática por ahora) --- */}
+      <div className="absolute right-6 top-1/2 -translate-y-1/2 hidden xl:block">
+        <h4 className="text-[8px] text-[#00F3FF] font-mono tracking-widest text-right mb-3 border-b border-[#00F3FF]/20 pb-1">
+          TOP PROCESSES
+        </h4>
+        <ul className="space-y-2 text-right">
+          {[
+            { name: "DOCKER_CONTAINER", val: "12%" },
+            { name: "PYTHON_SCRIPT_V2", val: "8%" },
+            { name: "SYSTEM_KERNEL", val: "4%" },
+            { name: "NODE_SERVER", val: "3%" },
+          ].map((proc, i) => (
+            <li key={i} className="flex justify-end gap-3 text-[9px] font-mono group cursor-default">
+              <span className="text-gray-500 group-hover:text-white transition-colors">{proc.name}</span>
+              <span className="text-[#00FF41]">{proc.val}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* --- ABAJO: DETALLES TÉCNICOS --- */}
+      <div className="absolute bottom-6 w-full px-12 flex justify-between text-[8px] font-mono text-gray-500 uppercase tracking-wider">
+        <div>
+          <span className="text-[#00F3FF]">VOLTAJE:</span> 1.41V
+        </div>
+        <div className="flex gap-4">
+          <span>HILOS: <span className="text-white">12 ACTIVOS</span></span>
+          <span>GOBERNADOR: <span className="text-white">PERFORMANCE</span></span>
+        </div>
+      </div>
+
     </div>
   );
 }
