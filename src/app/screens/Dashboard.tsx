@@ -1,5 +1,5 @@
 import { ReactorGauge } from '@/app/components/ReactorGauge';
-import { NetworkCard } from '@/app/components/NetworkCard';
+import { NetworkCard } from '@/app/components/NetworkWave';
 import { Activity, HardDrive } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useSystem } from '@/app/context/SystemContext';

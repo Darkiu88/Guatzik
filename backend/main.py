@@ -11,7 +11,7 @@ app = FastAPI()
 # Realizara que react (que corre en el puerto 5173) hable con python (puerto 8000)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=["*"],  # El asterisco permite TODAS las conexiones (Tu celular)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

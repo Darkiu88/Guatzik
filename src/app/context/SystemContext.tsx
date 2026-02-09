@@ -2,16 +2,15 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 
 export type SystemMode = 'dashboard' | 'geosec' | 'mediacore' | 'hardwarelink';
 
-// 1. AMPLIAMOS LA INTERFAZ CON TODOS LOS DATOS REALES
 interface SystemState {
   mode: SystemMode;
   vpnActive: boolean;
   spotifyPlaying: boolean;
   cpuLoad: number;
-  ramPercent: number;    // Nuevo
-  ramUsed: number;       // Nuevo
-  diskPercent: number;   // Nuevo
-  netSpeed: number;      // Nuevo (MB/s)
+  ramPercent: number;
+  ramUsed: number;
+  diskPercent: number;
+  netSpeed: number;
 }
 
 interface SystemContextType {
@@ -47,16 +46,17 @@ export function SystemProvider({ children }: { children: ReactNode }) {
     setState((prev) => ({ ...prev, spotifyPlaying: !prev.spotifyPlaying }));
   };
 
-  useEffect(() => {
-    const ws = new WebSocket('ws://localhost:8000/ws/system');
+useEffect(() => {
+    // ⚠️ ASEGÚRATE DE QUE SEA EXACTAMENTE ESTA LÍNEA:
+    const ws = new WebSocket('ws://192.168.0.10:8000/ws/system');
 
-    ws.onopen = () => console.log('[GUATZIK] Enlace Neuronal Establecido.');
-
+    ws.onopen = () => console.log('[GUATZIK] Conexión establecida.');
+    
+    // ... resto del código ...
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
         
-        // 2. MAPEAMOS TODOS LOS DATOS QUE VIENEN DE PYTHON
         setState((prev) => ({
           ...prev,
           cpuLoad: data.cpu_load || 0,
@@ -69,6 +69,10 @@ export function SystemProvider({ children }: { children: ReactNode }) {
         console.error("Error al procesar datos", e);
       }
     };
+
+    ws.onerror = (e) => {
+      console.error("[GUATZIK] Error de conexión:", e);
+    }
 
     return () => ws.close();
   }, []);
