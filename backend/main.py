@@ -74,6 +74,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 "cpu_load": cpu_percent,
                 "ram_percent": ram.percent,
                 "ram_used_gb": round(ram.used / (1024**3), 2),
+                "ram_total_gb": round(ram.total / (1024**3), 1 ),
                 "disk_percent": disk.percent,
                 "net_speed_mb": round(total_speed, 1), # Suma subida y bajada
                 "net_up_mb": round(up_speed, 2),

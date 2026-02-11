@@ -9,6 +9,7 @@ interface SystemState {
   cpuLoad: number;
   ramPercent: number;
   ramUsed: number;
+  ramTotal: number;
   diskPercent: number;
   netSpeed: number;
 }
@@ -30,6 +31,7 @@ export function SystemProvider({ children }: { children: ReactNode }) {
     cpuLoad: 0,
     ramPercent: 0,
     ramUsed: 0,
+    ramTotal: 0,
     diskPercent: 0,
     netSpeed: 0,
   });
@@ -47,12 +49,21 @@ export function SystemProvider({ children }: { children: ReactNode }) {
   };
 
 useEffect(() => {
-    // ⚠️ ASEGÚRATE DE QUE SEA EXACTAMENTE ESTA LÍNEA:
-    const ws = new WebSocket('ws://192.168.0.10:8000/ws/system');
+    // ----------------------------------------------------
+    // 1. DETECCIÓN AUTOMÁTICA DE IP
+    // Toma la IP que estás usando en el navegador (Wifi o Tailscale)
+    const ipActual = window.location.hostname;
+    const wsUrl = `ws://${ipActual}:8000/ws/system`;
 
-    ws.onopen = () => console.log('[GUATZIK] Conexión establecida.');
-    
-    // ... resto del código ...
+    console.log(`[GUATZIK] Intentando conectar a: ${wsUrl}`);
+    // ----------------------------------------------------
+
+    const ws = new WebSocket(wsUrl);
+
+    ws.onopen = () => {
+      console.log('[GUATZIK] ✅ Conexión establecida.');
+    };
+
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
@@ -62,6 +73,7 @@ useEffect(() => {
           cpuLoad: data.cpu_load || 0,
           ramPercent: data.ram_percent || 0,
           ramUsed: data.ram_used_gb || 0,
+          ramTotal: data.ram_total_gb || 0,
           diskPercent: data.disk_percent || 0,
           netSpeed: data.net_speed_mb || 0,
         }));
@@ -70,13 +82,15 @@ useEffect(() => {
       }
     };
 
-    ws.onerror = (e) => {
-      console.error("[GUATZIK] Error de conexión:", e);
-    }
+    ws.onerror = (error) => {
+      console.error("[GUATZIK] ❌ Error de conexión:", error);
+    };
 
-    return () => ws.close();
+    // Limpieza al salir de la pantalla
+    return () => {
+      if (ws.readyState === 1) ws.close();
+    };
   }, []);
-
   return (
     <SystemContext.Provider value={{ state, setMode, toggleVPN, toggleSpotify }}>
       {children}

@@ -9,3 +9,7 @@
 
   Run `npm run dev` to start the development server.
   
+
+  para probar 
+  Cuando veas que todo funciona puedes probar con 
+  ./iniciar_guatzik

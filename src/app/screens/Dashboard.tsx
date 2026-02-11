@@ -29,12 +29,17 @@ export function Dashboard() {
       {/* --- COLUMNA DERECHA: PILA DE TARJETAS (RAM, DISCO, RED) --- */}
       <div className="col-span-12 lg:col-span-7 flex flex-col gap-6">
         
-        {/* TARJETA 1: RAM (Diseño Original de Barra) */}
+{/* TARJETA 1: RAM (Diseño Original de Barra) */}
         <div className="glass-panel p-6 rounded-2xl relative overflow-hidden group">
            <div className="flex justify-between items-start mb-2">
               <div>
                 <h3 className="text-[10px] text-[#00FF41] tracking-widest font-bold uppercase">MEMORIA RAM</h3>
-                <div className="text-[10px] text-gray-500">TOTAL: 32 GB</div>
+                
+                {/* 👇 AQUÍ ESTÁ EL CAMBIO 👇 */}
+                <div className="text-[10px] text-gray-500">
+                    TOTAL: {state.ramTotal || 0} GB
+                </div>
+                
               </div>
               <Activity size={18} className="text-[#00FF41]" />
            </div>
@@ -53,7 +58,6 @@ export function Dashboard() {
            </div>
            <div className="text-right text-[10px] text-[#00FF41] mt-1">{state.ramPercent}%</div>
         </div>
-
         {/* TARJETA 2: DISCO (Diseño Original de Barra) */}
         <div className="glass-panel p-6 rounded-2xl relative overflow-hidden group">
            <div className="flex justify-between items-start mb-2">
