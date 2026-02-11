@@ -12,6 +12,8 @@ interface SystemState {
   ramTotal: number;
   diskPercent: number;
   netSpeed: number;
+  netUp: number;   // Subida (Celeste)
+  netDown: number; // Bajada (Verde)
 }
 
 interface SystemContextType {
@@ -34,6 +36,9 @@ export function SystemProvider({ children }: { children: ReactNode }) {
     ramTotal: 0,
     diskPercent: 0,
     netSpeed: 0,
+    // 👇 1. IMPORTANTE: Inicializar en 0 para evitar errores
+    netUp: 0,
+    netDown: 0,
   });
 
   const setMode = (mode: SystemMode) => {
@@ -48,10 +53,9 @@ export function SystemProvider({ children }: { children: ReactNode }) {
     setState((prev) => ({ ...prev, spotifyPlaying: !prev.spotifyPlaying }));
   };
 
-useEffect(() => {
+  useEffect(() => {
     // ----------------------------------------------------
-    // 1. DETECCIÓN AUTOMÁTICA DE IP
-    // Toma la IP que estás usando en el navegador (Wifi o Tailscale)
+    // DETECCIÓN AUTOMÁTICA DE IP
     const ipActual = window.location.hostname;
     const wsUrl = `ws://${ipActual}:8000/ws/system`;
 
@@ -76,6 +80,10 @@ useEffect(() => {
           ramTotal: data.ram_total_gb || 0,
           diskPercent: data.disk_percent || 0,
           netSpeed: data.net_speed_mb || 0,
+          
+          // 👇 2. IMPORTANTE: Guardar los datos que vienen de Python
+          netUp: data.net_up_mb || 0,
+          netDown: data.net_down_mb || 0,
         }));
       } catch (e) {
         console.error("Error al procesar datos", e);
@@ -91,6 +99,7 @@ useEffect(() => {
       if (ws.readyState === 1) ws.close();
     };
   }, []);
+
   return (
     <SystemContext.Provider value={{ state, setMode, toggleVPN, toggleSpotify }}>
       {children}

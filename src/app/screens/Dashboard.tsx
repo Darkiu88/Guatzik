@@ -16,10 +16,8 @@ export function Dashboard() {
         animate={{ opacity: 1, x: 0 }}
         className="col-span-12 lg:col-span-5 glass-panel rounded-3xl relative overflow-hidden flex flex-col justify-center min-h-[500px]"
       >
-        {/* Usamos el componente Reactor con la gráfica de montaña */}
         <ReactorGauge value={state.cpuLoad} label="CPU UTILIZATION" />
 
-        {/* Detalles técnicos al pie de la tarjeta CPU */}
         <div className="absolute bottom-6 w-full px-8 flex justify-between text-[9px] text-gray-500 uppercase tracking-wider">
           <div>VOLTAJE: <span className="text-[#00F3FF]">1.41 V</span></div>
           <div>GOBERNADOR: <span className="text-white">PERFORMANCE</span></div>
@@ -29,17 +27,14 @@ export function Dashboard() {
       {/* --- COLUMNA DERECHA: PILA DE TARJETAS (RAM, DISCO, RED) --- */}
       <div className="col-span-12 lg:col-span-7 flex flex-col gap-6">
         
-{/* TARJETA 1: RAM (Diseño Original de Barra) */}
+        {/* TARJETA 1: RAM */}
         <div className="glass-panel p-6 rounded-2xl relative overflow-hidden group">
            <div className="flex justify-between items-start mb-2">
               <div>
                 <h3 className="text-[10px] text-[#00FF41] tracking-widest font-bold uppercase">MEMORIA RAM</h3>
-                
-                {/* 👇 AQUÍ ESTÁ EL CAMBIO 👇 */}
                 <div className="text-[10px] text-gray-500">
                     TOTAL: {state.ramTotal || 0} GB
                 </div>
-                
               </div>
               <Activity size={18} className="text-[#00FF41]" />
            </div>
@@ -48,7 +43,6 @@ export function Dashboard() {
              {state.ramUsed} <span className="text-sm text-gray-400">GB EN USO</span>
            </div>
            
-           {/* Barra de Progreso Gruesa y Verde */}
            <div className="h-2 bg-gray-800 rounded-full overflow-hidden w-full">
              <motion.div 
                className="h-full bg-[#00FF41] shadow-[0_0_10px_#00FF41]"
@@ -58,7 +52,8 @@ export function Dashboard() {
            </div>
            <div className="text-right text-[10px] text-[#00FF41] mt-1">{state.ramPercent}%</div>
         </div>
-        {/* TARJETA 2: DISCO (Diseño Original de Barra) */}
+
+        {/* TARJETA 2: DISCO */}
         <div className="glass-panel p-6 rounded-2xl relative overflow-hidden group">
            <div className="flex justify-between items-start mb-2">
               <div>
@@ -72,7 +67,6 @@ export function Dashboard() {
              {state.diskPercent}% <span className="text-sm text-gray-400">OCUPADO</span>
            </div>
            
-           {/* Barra de Progreso Gruesa y Cian */}
            <div className="h-2 bg-gray-800 rounded-full overflow-hidden w-full">
              <motion.div 
                className="h-full bg-[#00F3FF] shadow-[0_0_10px_#00F3FF]"
@@ -81,9 +75,13 @@ export function Dashboard() {
            </div>
         </div>
 
-        {/* TARJETA 3: RED (Componente de Onda Verde) */}
+        {/* TARJETA 3: RED (NUEVA VERSIÓN DOBLE) */}
         <div className="flex-1 min-h-[220px]">
-             <NetworkCard speed={state.netSpeed} />
+             {/* 👇 CAMBIO IMPORTANTE: Pasamos upload y download por separado */}
+             <NetworkCard 
+                upload={state.netUp} 
+                download={state.netDown} 
+             />
         </div>
 
       </div>

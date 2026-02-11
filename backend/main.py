@@ -36,10 +36,11 @@ def get_network_speed():
     # Bytes transcurridos
     bytes_sent = current_net_io.bytes_sent - last_net_io.bytes_sent
     bytes_recv = current_net_io.bytes_recv - last_net_io.bytes_recv
-    
-    # Velocidad en MB/s
-    upload_speed = (bytes_sent / time_delta) / (1024 * 1024)
-    download_speed = (bytes_recv / time_delta) / (1024 * 1024)
+
+# --- CAMBIO AQUÍ: Multiplicamos por 8 para obtener Bits ---
+    # (Bytes / tiempo / 1024 / 1024) * 8 = Megabits por segundo
+    upload_speed = ((bytes_sent / time_delta) / (1024 * 1024)) * 8
+    download_speed = ((bytes_recv / time_delta) / (1024 * 1024)) * 8  
     
     # Actualizar referencia
     last_net_io = current_net_io
