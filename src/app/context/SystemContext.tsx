@@ -14,6 +14,7 @@ interface SystemState {
   netSpeed: number;
   netUp: number;   // Subida (Celeste)
   netDown: number; // Bajada (Verde)
+  printerInkLow: boolean;
 }
 
 interface SystemContextType {
@@ -39,6 +40,7 @@ export function SystemProvider({ children }: { children: ReactNode }) {
     // 👇 1. IMPORTANTE: Inicializar en 0 para evitar errores
     netUp: 0,
     netDown: 0,
+    printerInkLow: false,
   });
 
   const setMode = (mode: SystemMode) => {
@@ -71,19 +73,16 @@ export function SystemProvider({ children }: { children: ReactNode }) {
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        
+
+        // ESTA LÍNEA ES VITAL PARA VER QUÉ LLEGA
+        console.log("DATOS RECIBIDOS:", data);
+
         setState((prev) => ({
           ...prev,
           cpuLoad: data.cpu_load || 0,
+          cpuTemp: data.cpu_temp || 0, // <--- ESTO ES LO QUE TE FALTA
           ramPercent: data.ram_percent || 0,
-          ramUsed: data.ram_used_gb || 0,
-          ramTotal: data.ram_total_gb || 0,
-          diskPercent: data.disk_percent || 0,
-          netSpeed: data.net_speed_mb || 0,
-          
-          // 👇 2. IMPORTANTE: Guardar los datos que vienen de Python
-          netUp: data.net_up_mb || 0,
-          netDown: data.net_down_mb || 0,
+          // ... resto de variables
         }));
       } catch (e) {
         console.error("Error al procesar datos", e);

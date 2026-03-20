@@ -142,7 +142,7 @@ export function MediaCore() {
           }}
         >
           <div className="text-sm font-mono text-[#00F3FF] mb-6 tracking-wider">
-            GUATZIK INGEST // SOUND FLEX
+            SOUNDFLEXHUB
           </div>
 
           {/* URL Input Terminal Style */}
