@@ -1,17 +1,23 @@
 import { motion } from 'motion/react';
 import { useEffect, useState } from 'react';
 
-interface ReactorGaugeProps {
-  value: number; // Usamos 'value' para que sea compatible con tu Dashboard actual
-  label?: string;
+// 👇 Definimos la estructura de un proceso real
+interface ProcessData {
+  name: string;
+  cpu: number;
 }
 
-export function ReactorGauge({ value, label = "CPU UTILIZATION" }: ReactorGaugeProps) {
+interface ReactorGaugeProps {
+  value: number; // El total de CPU
+  label?: string;
+  processList?: ProcessData[]; // ✅ ACEPTA LA LISTA REAL DE PROCESOS
+}
+
+export function ReactorGauge({ value, label = "CPU UTILIZATION", processList = [] }: ReactorGaugeProps) {
   // 1. BLINDAJE: Aseguramos que el valor sea un número válido
   const safeValue = (typeof value === 'number' && !isNaN(value)) ? value : 0;
 
   // 2. SIMULACIÓN DE HISTORIAL (Para la gráfica de fondo)
-  // Como el backend aun no manda historial, lo simulamos visualmente
   const [historyData, setHistoryData] = useState<number[]>([]);
 
   useEffect(() => {
@@ -116,35 +122,27 @@ export function ReactorGauge({ value, label = "CPU UTILIZATION" }: ReactorGaugeP
         </div>
       </div>
 
-      {/* --- DERECHA: LISTA DE PROCESOS (Estática por ahora) --- */}
+      {/* --- DERECHA: LISTA DE PROCESOS REALES --- */}
       <div className="absolute right-6 top-1/2 -translate-y-1/2 hidden xl:block">
         <h4 className="text-[8px] text-[#00F3FF] font-mono tracking-widest text-right mb-3 border-b border-[#00F3FF]/20 pb-1">
           TOP PROCESSES
         </h4>
         <ul className="space-y-2 text-right">
-          {[
-            { name: "DOCKER_CONTAINER", val: "12%" },
-            { name: "PYTHON_SCRIPT_V2", val: "8%" },
-            { name: "SYSTEM_KERNEL", val: "4%" },
-            { name: "NODE_SERVER", val: "3%" },
-          ].map((proc, i) => (
-            <li key={i} className="flex justify-end gap-3 text-[9px] font-mono group cursor-default">
-              <span className="text-gray-500 group-hover:text-white transition-colors">{proc.name}</span>
-              <span className="text-[#00FF41]">{proc.val}</span>
-            </li>
-          ))}
+          {processList && processList.length > 0 ? (
+            // 👇 MAPEO DE LA LISTA REAL DE PROCESOS 👇
+            processList.map((proc, i) => (
+              <li key={i} className="flex justify-end gap-3 text-[9px] font-mono group cursor-default">
+                <span className="text-gray-500 group-hover:text-white transition-colors">
+                  {proc.name.length > 15 ? proc.name.substring(0, 15) + "..." : proc.name}
+                </span>
+                <span className="text-[#00FF41]">{proc.cpu.toFixed(1)}%</span>
+              </li>
+            ))
+          ) : (
+            // Texto de espera si no hay procesos aún
+            <div className="text-[9px] font-mono text-gray-700 text-right mt-4">[SCANNING...]</div>
+          )}
         </ul>
-      </div>
-
-      {/* --- ABAJO: DETALLES TÉCNICOS --- */}
-      <div className="absolute bottom-6 w-full px-12 flex justify-between text-[8px] font-mono text-gray-500 uppercase tracking-wider">
-        <div>
-          <span className="text-[#00F3FF]">VOLTAJE:</span> 1.41V
-        </div>
-        <div className="flex gap-4">
-          <span>HILOS: <span className="text-white">12 ACTIVOS</span></span>
-          <span>GOBERNADOR: <span className="text-white">PERFORMANCE</span></span>
-        </div>
       </div>
 
     </div>

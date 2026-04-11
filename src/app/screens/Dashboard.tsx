@@ -1,6 +1,6 @@
 import { ReactorGauge } from "@/app/components/ReactorGauge";
 import { NetworkCard } from "@/app/components/NetworkWave";
-import { Activity, HardDrive, Thermometer, Wind } from "lucide-react"; // <--- Agregamos iconos
+import { Activity, HardDrive, Thermometer, Wind } from "lucide-react";
 import { motion } from "motion/react";
 import { useSystem } from "@/app/context/SystemContext";
 
@@ -31,10 +31,14 @@ export function Dashboard() {
             boxShadow: state.cpuTemp > 80 ? '0 0 30px rgba(255, 0, 60, 0.2)' : 'none'
         }}
       >
-        {/* Medidor Circular Central */}
-        <ReactorGauge value={state.cpuLoad} label="CPU UTILIZATION" />
+        {/* Medidor Circular Central - ¡AHORA CON LA LISTA DE PROCESOS! */}
+        <ReactorGauge 
+          value={state.cpuLoad} 
+          label="CPU UTILIZATION" 
+          processList={state.topProcesses} // ✅ Conexión de los datos reales
+        />
 
-        {/* --- NUEVA SECCIÓN: BARRA DE TEMPERATURA --- */}
+        {/* --- SECCIÓN: BARRA DE TEMPERATURA --- */}
         <div className="absolute bottom-20 w-full px-8">
             <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">

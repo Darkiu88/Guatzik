@@ -2,18 +2,34 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 
 export type SystemMode = 'dashboard' | 'geosec' | 'mediacore' | 'hardwarelink';
 
+// Interfaz para los procesos individuales que manda Python
+interface ProcessData {
+  name: string;
+  cpu: number;
+}
+
+// Interfaz para las descargas reales
+interface DownloadData {
+  name: string;
+  progress: number;
+  speed: string;
+}
+
 interface SystemState {
   mode: SystemMode;
   vpnActive: boolean;
   spotifyPlaying: boolean;
   cpuLoad: number;
+  cpuTemp: number;
+  topProcesses: ProcessData[];
+  downloads: DownloadData[]; // ✅ 1. Agregado a la interfaz
   ramPercent: number;
   ramUsed: number;
   ramTotal: number;
   diskPercent: number;
   netSpeed: number;
-  netUp: number;   // Subida (Celeste)
-  netDown: number; // Bajada (Verde)
+  netUp: number;
+  netDown: number;
   printerInkLow: boolean;
 }
 
@@ -22,6 +38,7 @@ interface SystemContextType {
   setMode: (mode: SystemMode) => void;
   toggleVPN: () => void;
   toggleSpotify: () => void;
+  clearDownloads: () => void;
 }
 
 const SystemContext = createContext<SystemContextType | undefined>(undefined);
@@ -32,16 +49,22 @@ export function SystemProvider({ children }: { children: ReactNode }) {
     vpnActive: false,
     spotifyPlaying: true,
     cpuLoad: 0,
+    cpuTemp: 0,
+    topProcesses: [],
+    downloads: [], // ✅ 2. Inicializado vacío
     ramPercent: 0,
     ramUsed: 0,
     ramTotal: 0,
     diskPercent: 0,
     netSpeed: 0,
-    // 👇 1. IMPORTANTE: Inicializar en 0 para evitar errores
     netUp: 0,
     netDown: 0,
     printerInkLow: false,
   });
+
+  const clearDownloads = () => {
+  setState((prev) => ({ ...prev, downloads: [] }));
+};
 
   const setMode = (mode: SystemMode) => {
     setState((prev) => ({ ...prev, mode }));
@@ -56,51 +79,46 @@ export function SystemProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    // ----------------------------------------------------
-    // DETECCIÓN AUTOMÁTICA DE IP
     const ipActual = window.location.hostname;
     const wsUrl = `ws://${ipActual}:8000/ws/system`;
 
-    console.log(`[GUATZIK] Intentando conectar a: ${wsUrl}`);
-    // ----------------------------------------------------
+    console.log(`[GUATZIK] Conectando a: ${wsUrl}`);
 
     const ws = new WebSocket(wsUrl);
-
-    ws.onopen = () => {
-      console.log('[GUATZIK] ✅ Conexión establecida.');
-    };
 
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-
-        // ESTA LÍNEA ES VITAL PARA VER QUÉ LLEGA
-        console.log("DATOS RECIBIDOS:", data);
-
+        
         setState((prev) => ({
           ...prev,
           cpuLoad: data.cpu_load || 0,
-          cpuTemp: data.cpu_temp || 0, // <--- ESTO ES LO QUE TE FALTA
+          cpuTemp: data.cpu_temp || 0,
+          topProcesses: data.top_processes || [],
+          downloads: data.downloads || [], // ✅ 3. Mapeo de datos desde Python
           ramPercent: data.ram_percent || 0,
-          // ... resto de variables
+          ramUsed: data.ram_used_gb || 0,
+          ramTotal: data.ram_total_gb || 0,
+          diskPercent: data.disk_percent || 0,
+          netUp: data.net_up_mb || 0,
+          netDown: data.net_down_mb || 0,
+          netSpeed: (data.net_up_mb + data.net_down_mb) || 0,
         }));
       } catch (e) {
-        console.error("Error al procesar datos", e);
+        console.error("Error al procesar datos del servidor", e);
       }
     };
 
-    ws.onerror = (error) => {
-      console.error("[GUATZIK] ❌ Error de conexión:", error);
-    };
+    ws.onopen = () => console.log('[GUATZIK] ✅ Online');
+    ws.onerror = (e) => console.error("[GUATZIK] ❌ Error de conexión:", e);
 
-    // Limpieza al salir de la pantalla
-    return () => {
-      if (ws.readyState === 1) ws.close();
+    return () => { 
+      if (ws.readyState === 1) ws.close(); 
     };
   }, []);
 
   return (
-    <SystemContext.Provider value={{ state, setMode, toggleVPN, toggleSpotify }}>
+    <SystemContext.Provider value={{ state, setMode, toggleVPN, toggleSpotify, clearDownloads }}>
       {children}
     </SystemContext.Provider>
   );
